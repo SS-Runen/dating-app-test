@@ -2,16 +2,76 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+1. Create a new firebase project and enable the following services (Free plan is enough):
+- Authentication (Phone and Google sign-in methods)
+- Firestore Database
+    - Create a new collection called "users"
+        - Add the following fields:
+            - id (string)
+            - aboutMe (string)
+            - birthdate (timestamp)
+            - gender (string)
+            - createdAt (timestamp)
+            - name (string)
+            - phoneNumber (string)
+            - profilePicture (string)
+            - showMe (string)
+            - updatedAt (timestamp)
+    - Create a new collection called "user_matches"
+        - Add the following fields:
+            - id (string)
+            - matchedUserId (string)
+            - userId (string)
+            - status (string)
+    - Create a new collection called "chats"
+        - Add the following fields:
+            - id (string)
+            - updatedAt (timestamp)
+            - memberIds (array of strings)
+            - members (map)
+                - id (user id) (string)
+                    - name (string)
+                    - profilePicture (string)
+                - Example:
+                    - "1234567890": {
+                        "name": "John Doe",
+                        "profilePicture": "https://example.com/profile.jpg"
+                    }
+            - messages (array of objects)
+              - id (string)
+              - createdAt (timestamp)
+              - senderId (string)
+              - text (string)
+              - Example:
+                - [
+                    {
+                    "id": "1234567890",
+                    "createdAt": "2021-01-01T00:00:00Z",
+                    "senderId": "1234567890",
+                    "text": "Hello, how are you?"
+                   }
+                ]
+
+2. Create a new cloudinary account (Free plan is enough) to get the cloudinary credentials
+
+3. Create .env.local file and add the following variables:
+```
+NEXT_PUBLIC_FIREBASE_CONFIG=
+FIREBASE_SERVICE_ACCOUNT=
+CLOUDINARY_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_SECRET=
+```
+
+4. Install dependencies:
+```bash
+npm install
+```
+
+5. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
