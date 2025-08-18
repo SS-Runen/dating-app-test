@@ -4,11 +4,14 @@ import { messageConverter } from "@/lib/models/chat";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
+    console.log("[GET /api/get-messages] called");
     const { searchParams } = new URL(req.url);
     const chatId = searchParams.get('chatId');
     const lastVisibleTimestamp = searchParams.get('lastVisible');
+    console.log("[GET /api/get-messages] chatId:", chatId, "lastVisibleTimestamp:", lastVisibleTimestamp);
 
     if (!chatId) {
+        console.warn("[GET /api/get-messages] Missing chatId");
         return NextResponse.json({ message: "Chat ID is required" }, { status: 400 });
     }
 
@@ -38,10 +41,11 @@ export async function GET(req: NextRequest) {
         
         const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
         const nextLastVisible = lastDoc ? (lastDoc.data().createdAt as Timestamp).toDate().toISOString() : null;
+        console.log(`[GET /api/get-messages] Returned ${messages.length} messages for chatId ${chatId}`);
 
         return NextResponse.json({ messages, lastVisible: nextLastVisible }, { status: 200 });
     } catch (error) {
-        console.error("Failed to get messages:", error);
+        console.error("[GET /api/get-messages] Failed to get messages:", error);
         return NextResponse.json({ message: "Failed to get messages" }, { status: 500 });
     }
 }

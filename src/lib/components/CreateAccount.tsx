@@ -64,8 +64,9 @@ export default function CreateAccount(props: any) {
         <h2 style={{ color: "#fff" }}>Create account</h2>
         {displayMobileNumber && (
             // Modal number form
-        <div className="modal-number-form">
-            <div className="modal-number-form-content" style={{ height: "auto" }}>
+        <div className="modal-number-form" onClick={() => setDisplayMobileNumber(false)}>
+            <div className="modal-number-form-content" style={{ height: "auto" }} onClick={(e) => e.stopPropagation()}>
+                <button className="close-button" onClick={() => setDisplayMobileNumber(false)}>X</button>
         <form>
             <div className="form-group">
             <label htmlFor="phone">Phone number</label>
@@ -115,8 +116,9 @@ export default function CreateAccount(props: any) {
         {
             displayCreateAccount && (
                 // Modal create account form
-                <div className="modal-number-form">
-                    <div className="modal-number-form-content">
+                <div className="modal-number-form" onClick={() => setDisplayCreateAccount(false)}>
+                    <div className="modal-number-form-content" onClick={(e) => e.stopPropagation()}>
+                        <button className="close-button" onClick={() => setDisplayCreateAccount(false)}>X</button>
                         <form>
                             <div className="form-group" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                             {previewProfilePicture && 
