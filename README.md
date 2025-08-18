@@ -3,6 +3,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 ## Getting Started
 
 Due Date: Monday, August 18, 2025. End of day, 05:00 PM / 17:00.
+Firestore emulator runs at port 4040. The emulator UI is at the default available port.
 
 1. Create a new firebase project and enable the following services (Free plan is enough):
 - Authentication (Phone and Google sign-in methods)
