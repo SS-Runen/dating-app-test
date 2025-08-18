@@ -40,7 +40,7 @@ export default function Home() {
 
             {showCreateAccount && <CreateAccount handleShowLogin={handleShowLogin} />}
             {showLogin && <Login handleShowCreateAccount={handleShowCreateAccount} />}
-            {!showCreateAccount && !showLogin && <button type="button" className="btn btn-primary" style={{ width: "200px"}} onClick={() => setCheckAuth(true)}>Get Started</button>}
+            {!showCreateAccount && !showLogin && <button type="button" className="btn btn-primary btn-lg w-100" onClick={() => setCheckAuth(true)}>Get Started</button>}
         </div>
       </div>
     </div>

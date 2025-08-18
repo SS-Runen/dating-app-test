@@ -82,7 +82,7 @@ export default function Dashboard() {
         if (isFetchingMore || !authUser) return;
         setIsFetchingMore(true);
         try {
-            let url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}&gender=${filters.gender}&location=${filters.location}&ageRange=${filters.ageRange}`;
+            const url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}&gender=${filters.gender}&location=${filters.location}&ageRange=${filters.ageRange}`;
             const response = await fetch(url);
             const usersData = await response.json();
             setUsers(prevUsers => [...prevUsers, ...usersData.users]);
@@ -108,7 +108,7 @@ export default function Dashboard() {
             setCurrentIndex(0);
             setLastVisibleId("");
         }
-        let url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}&gender=${filters.gender}&location=${filters.location}&ageRange=${filters.ageRange}`;
+        const url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}&gender=${filters.gender}&location=${filters.location}&ageRange=${filters.ageRange}`;
         const response = await fetch(url);
         const usersData = await response.json();
         setUsers(usersData.users);
@@ -154,10 +154,39 @@ export default function Dashboard() {
                         <div className="form-group">
                             <label>Age range</label>
                             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <span>{filters.ageRange[0]}</span>
-                                <input type="range" className="form-control" min="18" max="100" value={filters.ageRange[0]} onChange={(e) => setFilters({ ...filters, ageRange: [parseInt(e.target.value), filters.ageRange[1]] })} />
-                                <input type="range" className="form-control" min="18" max="100" value={filters.ageRange[1]} onChange={(e) => setFilters({ ...filters, ageRange: [filters.ageRange[0], parseInt(e.target.value)] })} />
-                                <span>{filters.ageRange[1]}</span>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    min={18}
+                                    max={filters.ageRange[1]}
+                                    value={filters.ageRange[0]}
+                                    onChange={e => {
+                                        const val = e.target.value.replace(/[^0-9]/g, "");
+                                        setFilters({ ...filters, ageRange: [parseInt(val) || 18, filters.ageRange[1]] });
+                                    }}
+                                    list="min-age-options"
+                                    style={{ width: "80px" }}
+                                />
+                                <datalist id="min-age-options">
+                                    {[...Array(83)].map((_, i) => <option key={i} value={i + 18} />)}
+                                </datalist>
+                                <span>to</span>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    min={filters.ageRange[0]}
+                                    max={100}
+                                    value={filters.ageRange[1]}
+                                    onChange={e => {
+                                        const val = e.target.value.replace(/[^0-9]/g, "");
+                                        setFilters({ ...filters, ageRange: [filters.ageRange[0], parseInt(val) || 100] });
+                                    }}
+                                    list="max-age-options"
+                                    style={{ width: "80px" }}
+                                />
+                                <datalist id="max-age-options">
+                                    {[...Array(83)].map((_, i) => <option key={i} value={i + 18} />)}
+                                </datalist>
                             </div>
                         </div>
                         <button className="btn btn-primary" onClick={() => {

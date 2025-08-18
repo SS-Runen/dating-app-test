@@ -46,6 +46,8 @@ export async function POST(req: Request) {
             birthdate: Timestamp.fromDate(new Date(birthdate)),
             profilePicture: "",
             phoneNumber: firebaseUser.phoneNumber || null,
+            location: null,
+            ageRange: null,
         });
 
         const profilePictureUrl = await uploadImage(profilePicture);

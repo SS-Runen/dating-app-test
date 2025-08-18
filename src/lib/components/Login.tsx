@@ -79,8 +79,7 @@ export default function Login(props: any) {
                        setLoading(false);
                        return;
                    }
-                   const data = await response.json();
-                   localStorage.setItem("authUser", JSON.stringify(data));
+                   // No longer need to set localStorage, context will handle it.
                    window.location.href = "/explore";
                }).catch((error: any) => {
                    console.error(error);
@@ -118,8 +117,7 @@ export default function Login(props: any) {
                         setLoading(false);
                         return;
                     }
-                    const data = await response.json();
-                    localStorage.setItem("authUser", JSON.stringify(data));
+                    // No longer need to set localStorage, context will handle it.
                     window.location.href = "/explore";
                 }).catch((error) => {
                     console.error(error);

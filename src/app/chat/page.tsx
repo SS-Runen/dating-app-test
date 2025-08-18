@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useState, useRef } from "react";
 import AuthGuard from "../../lib/components/AuthGuard";
 import { useAppContext } from "@/lib/context/useAppContext";
@@ -40,7 +41,7 @@ function useWindowSize() {
     return windowSize;
   }
   
-export default function Chat() {
+function Chat() {
     const searchParams = useSearchParams();
     const chatUserId = searchParams.get("chatUserId");
     const [chats, setChats] = useState<IChat[]>([]);
@@ -113,11 +114,12 @@ export default function Chat() {
 
     return (
         <>
-            <AuthGuard />
+            <AuthGuard>
             <div className="chat-container">
                 <ChatSidebar chats={chats} authUser={authUser} handleSelectChat={handleSelectChat} selectedChat={selectedChat} />
                 <ChatWindow selectedChat={selectedChat} authUser={authUser} handleBack={handleBack} />
             </div>
+            </AuthGuard>
         </>
     )
 }
@@ -271,4 +273,12 @@ function ChatWindow({ selectedChat, authUser, handleBack }: { selectedChat: ICha
             </div>
         </div>
     )
+}
+
+export default function ChatPageWithSuspense() {
+  return (
+    <Suspense>
+      <Chat />
+    </Suspense>
+  );
 }

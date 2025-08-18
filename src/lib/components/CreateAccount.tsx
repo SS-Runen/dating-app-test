@@ -104,8 +104,7 @@ export default function CreateAccount(props: any) {
                    setDisplayCreateAccount(true);
                    return;
                }
-               const data = await response.json();
-               localStorage.setItem("authUser", JSON.stringify(data));
+               // No longer need to set localStorage, context will handle it.
                window.location.href = "/explore";
            }).catch((error: any) => {
                console.error(error);
@@ -205,8 +204,7 @@ export default function CreateAccount(props: any) {
                                         setLoading(false);
                                         throw new Error(res.statusText);
                                     }
-                                    const data = await res.json();
-                                    localStorage.setItem("authUser", JSON.stringify(data.user));
+                                    // No longer need to set localStorage, context will handle it.
                                     setLoading(false);
                                     setDisplayCreateAccount(false);
                                     window.location.href = "/explore";
@@ -236,8 +234,7 @@ export default function CreateAccount(props: any) {
                     setDisplayCreateAccount(true);
                     return;
                 }
-                const data = await response.json();
-                localStorage.setItem("authUser", JSON.stringify(data));
+                // No longer need to set localStorage, context will handle it.
                 window.location.href = "/explore";
             }).catch((error) => {
                 console.error(error);

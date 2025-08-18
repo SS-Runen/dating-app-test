@@ -98,33 +98,18 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Architectural Changes
+The app domain supplied by Vercel is:
+https://dating-app-test-xi.vercel.app/
 
-### `chats` Collection Schema
+The Vercel app version is tied to this GitHub repository.
 
-For the `chats` collection, it is highly recommended to implement the `messages` field as a **sub-collection** rather than an array of objects within the chat document.
+## Improvements
 
-**Reasoning:**
+### Allow User to Close Phone Number Input Modal
+Allow the user to close the phone number input modal by clicking an X button or clicking outside the modal form.
 
-Storing messages in a top-level array is a Firestore anti-pattern. As a conversation grows, the chat document will grow in size indefinitely. This leads to several problems:
-- **Document Size Limits:** Firestore documents have a 1 MiB size limit. A long chat history could easily exceed this limit, causing the application to fail.
-- **Performance:** Loading a chat would require loading the entire array of messages, which can be very slow and costly for long conversations.
-- **Querying:** It is difficult to paginate or query messages efficiently when they are stored in a large array.
+### Fetch Authentication Information from Remote
+Fetch the "authentication state" from Firebase instead of local storage. It is more secure and fits better with Firebase documentation.
 
-**Recommended Structure:**
-
-```
-chats/{chatId}/messages/{messageId}
-```
-
-- **`chats` (collection)**
-    - **`{chatId}` (document)**
-        - `id` (string)
-        - `updatedAt` (timestamp)
-        - `memberIds` (array of strings)
-        - **`messages` (sub-collection)**
-            - **`{messageId}` (document)**
-                - `createdAt` (timestamp)
-                - `senderId` (string)
-                - `text` (string)
-```
+### Modify Schema to Avoid Using Arrays
+Use a sub-colleciton under the chats documents to store the messages under each chat. This will avoid running into array size limits. It requires extra queries to get data but is more in line with Firestore documentation recommendations.

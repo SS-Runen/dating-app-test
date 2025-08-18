@@ -11,11 +11,13 @@ export default function Matches() {
     const { user: authUser } = useAppContext();
 
     const startChat = (userId: string) => {
+        if (!authUser) return;
         // Create a chat if not existing with the user
         window.location.href = `/chat?chatUserId=${userId}`;
     }
 
     const unmatchUser = (userId: string) => {
+        if (!authUser) return;
         Swal.fire({
             title: "Are you sure?",
             text: "You won't be able to revert this!",
@@ -41,7 +43,7 @@ export default function Matches() {
                         method: "POST",
                         body: JSON.stringify({
                             userId: authUser.id,
-                            matchedUserId: authUser.id,
+                            matchedUserId: userId,
                         })
                     });
 
@@ -84,7 +86,7 @@ export default function Matches() {
     
     return (
         <>
-        <AuthGuard/>
+        <AuthGuard>
         <div className="main-container">
             <Navbar />
             <h1>Matches</h1>
@@ -143,6 +145,7 @@ export default function Matches() {
                 </div>}
             </div>
         </div>
-    </>
+        </AuthGuard>
+        </>
     )
 }
