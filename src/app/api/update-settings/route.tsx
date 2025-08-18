@@ -3,7 +3,7 @@ import { getFirebaseApp } from "../../../lib/firebase/client";
 import { doc, getFirestore, serverTimestamp, updateDoc } from "firebase/firestore";
 
 export async function POST(req: NextRequest) {
-    const { showMe, userId } = await req.json();
+    const { showMe, userId, location, ageRange } = await req.json();
 
     if (!userId) {
         return NextResponse.json({ error: "User ID is required" }, { status: 400 });
@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
 
         const update: any = {
             showMe,
+            location,
+            ageRange,
             updatedAt: serverTimestamp(),
         };
 

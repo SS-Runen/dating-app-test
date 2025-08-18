@@ -6,6 +6,8 @@ export async function GET(req: Request) {
     const userId = searchParams.get("userId") as string;
     const pageLimit = parseInt(searchParams.get("limit") || "10");
     const lastVisibleId = searchParams.get("lastVisibleId");
+    const ageRangeParam = searchParams.get("ageRange");
+    const ageRange = ageRangeParam ? ageRangeParam.split(",").map(Number) as [number, number] : undefined;
 
     const firebaseApp = getFirebaseApp();
     const db = getFirestore(firebaseApp);
@@ -26,15 +28,28 @@ export async function GET(req: Request) {
     const userMatchesQuery = query(userMatchesRef, where("userId", "==", userId));
     const userMatchesSnapshot = await getDocs(userMatchesQuery);
     const userMatches = userMatchesSnapshot.docs.map((doc) => doc.data());
-    const matchedUserIds = userMatches.map((match) => match.userId);
+    const matchedUserIds = userMatches.map((match) => match.matchedUserId);
 
     const usersRef = collection(db, "/users");
     const removedUserIds = [...(matchedUserIds || []), userId];
     const queries: QueryConstraint[] = [
-        where(documentId(), "not-in", removedUserIds),
+        where(documentId(), "!=", userId),
         ...(user.showMe === "everyone" ? [] : [where("gender", "==", user.showMe === "men" ? "male" : "female")]),
-        limit(pageLimit)
+        limit(50)
     ]
+
+    if (user.location) {
+        queries.push(where("location", "==", user.location));
+    }
+
+    if (ageRange && ageRange.length === 2 && !isNaN(ageRange[0]) && !isNaN(ageRange[1])) {
+        const [minAge, maxAge] = ageRange;
+        const now = new Date();
+        const minBirthdate = new Date(now.getFullYear() - maxAge, now.getMonth(), now.getDate());
+        const maxBirthdate = new Date(now.getFullYear() - minAge, now.getMonth(), now.getDate());
+        queries.push(where("birthdate", ">=", minBirthdate));
+        queries.push(where("birthdate", "<=", maxBirthdate));
+    }
 
     if (lastVisibleId) {
         queries.push(startAfter(documentId(), lastVisibleId));
@@ -47,7 +62,7 @@ export async function GET(req: Request) {
             id: doc.id,
             ...doc.data()
         }
-    });
+    }).filter((user) => !removedUserIds.includes(user.id)).slice(0, pageLimit);
     const lastVisible = querySnapshot.docs[querySnapshot.docs.length-1];
     return Response.json({
         users: usersData,

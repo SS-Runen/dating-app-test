@@ -19,6 +19,7 @@ export default function Profile() {
         previewProfilePicture: null,
         birthdate: "",
         gender: "",
+        location: "",
     });
     const [showDropdown, setShowDropdown] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
@@ -29,6 +30,7 @@ export default function Profile() {
     }
 
     const onSubmit = async () => {
+        if (!authUser) return;
         setIsEditing(false);
 
         const formDataToSend = new FormData();
@@ -37,6 +39,8 @@ export default function Profile() {
         formDataToSend.append("birthdate", formData.birthdate);
         formDataToSend.append("profilePicture", formData.profilePictureFile);
         formDataToSend.append("userId", authUser.id);
+        formDataToSend.append("gender", formData.gender);
+        formDataToSend.append("location", formData.location);
         Swal.showLoading();
 
         try {
@@ -80,6 +84,7 @@ export default function Profile() {
             aboutMe: userData.aboutMe,
             birthdate: userData.birthdate?.seconds ? new Date(userData.birthdate.seconds * 1000).toISOString().split("T")[0] : "",
             gender: userData.gender,
+            location: userData.location,
         })
         setLoading(false);
        }
@@ -88,7 +93,7 @@ export default function Profile() {
     
     return (
     <>
-        <AuthGuard/>
+        <AuthGuard>
         <div className="main-container">
         <Navbar />
         <h1>Profile</h1>
@@ -137,6 +142,7 @@ export default function Profile() {
                                 profilePictureFile: null,
                                 gender: user.gender,
                                 previewProfilePicture: null,
+                                location: user.location,
                             })
                         }}>
                             <i className="la la-times" style={{ fontSize: "20px", color: "#5e72e4" }}></i>
@@ -188,10 +194,23 @@ export default function Profile() {
                     <option value="male">Male</option>
                     <option value="female">Female</option>
                 </select>) : (<p style={{ textTransform: "capitalize" }}>{user.gender}</p>)}
+                <h6>Location</h6>
+                {isEditing ? (<select className="form-control" style={{ maxWidth: "200px" }} value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })}>
+                    <option value="">Select Location</option>
+                    <option value="london">London</option>
+                    <option value="manchester">Manchester</option>
+                    <option value="birmingham">Birmingham</option>
+                    <option value="leeds">Leeds</option>
+                    <option value="glasgow">Glasgow</option>
+                    <option value="edinburgh">Edinburgh</option>
+                    <option value="cardiff">Cardiff</option>
+                    <option value="belfast">Belfast</option>
+                </select>) : (<p style={{ textTransform: "capitalize" }}>{user.location}</p>)}
             </div>
             </div>
         )}
         </div>
+        </AuthGuard>
     </>
     )
 }
@@ -199,9 +218,12 @@ export default function Profile() {
 function ProfileSettings({user, setShowSettings}: {user: any, setShowSettings: (show: boolean) => void}) {
     const [ageRange, setAgeRange] = useState([18, 100]);
     const [showMe, setShowMe] = useState("everyone");
+    const [location, setLocation] = useState("");
 
     useEffect(() => {
         setShowMe(user.showMe);
+        setLocation(user.location);
+        setAgeRange(user.ageRange || [18, 100]);
     }, [user]);
 
     const onSubmit = async () => {
@@ -211,7 +233,7 @@ function ProfileSettings({user, setShowSettings}: {user: any, setShowSettings: (
             Swal.showLoading();
             const response = await fetch("/api/update-settings", {
                 method: "POST",
-                body: JSON.stringify({ showMe, userId: user.id }),
+                body: JSON.stringify({ showMe, userId: user.id, location, ageRange }),
             });
             Swal.close();
             if (!response.ok) {
@@ -250,12 +272,29 @@ function ProfileSettings({user, setShowSettings}: {user: any, setShowSettings: (
                         <option value="women">Women</option>
                     </select>
                 </div>
+                <div className="settings-group">
+                    <h6>Location</h6>
+                    <select className="form-control" style={{ maxWidth: "200px" }} value={location} onChange={(e) => setLocation(e.target.value)}>
+                        <option value="">Select Location</option>
+                        <option value="london">London</option>
+                        <option value="manchester">Manchester</option>
+                        <option value="birmingham">Birmingham</option>
+                        <option value="leeds">Leeds</option>
+                        <option value="glasgow">Glasgow</option>
+                        <option value="edinburgh">Edinburgh</option>
+                        <option value="cardiff">Cardiff</option>
+                        <option value="belfast">Belfast</option>
+                    </select>
+                </div>
                 {/* TODO: Add age range */}
-                {/* <div className="settings-group">
+                <div className="settings-group">
                     <h6>Age range</h6>
                     <div className="form-group">
+                        <input type="range" className="form-control" min="18" max="100" value={ageRange[0]} onChange={(e) => setAgeRange([parseInt(e.target.value), ageRange[1]])} />
+                        <input type="range" className="form-control" min="18" max="100" value={ageRange[1]} onChange={(e) => setAgeRange([ageRange[0], parseInt(e.target.value)])} />
+                        <p>{ageRange[0]} - {ageRange[1]}</p>
                     </div>
-                </div> */}
+                </div>
                 <button className="btn btn-primary" onClick={onSubmit}>
                     Save Changes
                 </button>

@@ -23,6 +23,7 @@ export default function Dashboard() {
     }
 
     const handleSwipe = (direction: "left" | "right") => {
+        if (!authUser) return;
         setSwipeDirection(direction);
         const user = users[currentIndex];
         // Save interaction to database
@@ -72,10 +73,14 @@ export default function Dashboard() {
 
 
     const fetchMoreUsers = async () => {
-        if (isFetchingMore) return;
+        if (isFetchingMore || !authUser) return;
         setIsFetchingMore(true);
         try {
-            const response = await fetch(`/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}`);
+            let url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}`;
+            if (authUser.ageRange) {
+                url += `&ageRange=${authUser.ageRange}`;
+            }
+            const response = await fetch(url);
             const usersData = await response.json();
             setUsers(prevUsers => [...prevUsers, ...usersData.users]);
             if (usersData.lastVisible) {
@@ -92,7 +97,11 @@ export default function Dashboard() {
         const fetchUsers = async () => {
             if (!authUser) return;
             setLoading(true);
-            const response = await fetch(`/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}`);
+            let url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}`;
+            if (authUser.ageRange) {
+                url += `&ageRange=${authUser.ageRange}`;
+            }
+            const response = await fetch(url);
             const usersData = await response.json();
             setUsers(usersData.users);
             if (usersData.lastVisible) {
@@ -105,7 +114,7 @@ export default function Dashboard() {
     
     return (
         <>
-        <AuthGuard/>
+        <AuthGuard>
         <div className="main-container">
             <Navbar />
              <h1>Explore</h1>
@@ -137,6 +146,7 @@ export default function Dashboard() {
                 <button className="btn btn-primary" onClick={() => handleSwipe("right")}><i className="la la-heart"></i></button>
             </div>
         </div>
+        </AuthGuard>
         </>
     )
 }
