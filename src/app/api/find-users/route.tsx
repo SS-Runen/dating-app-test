@@ -8,6 +8,8 @@ export async function GET(req: Request) {
     const lastVisibleId = searchParams.get("lastVisibleId");
     const ageRangeParam = searchParams.get("ageRange");
     const ageRange = ageRangeParam ? ageRangeParam.split(",").map(Number) as [number, number] : undefined;
+    const gender = searchParams.get("gender");
+    const location = searchParams.get("location");
 
     const firebaseApp = getFirebaseApp();
     const db = getFirestore(firebaseApp);
@@ -34,12 +36,12 @@ export async function GET(req: Request) {
     const removedUserIds = [...(matchedUserIds || []), userId];
     const queries: QueryConstraint[] = [
         where(documentId(), "!=", userId),
-        ...(user.showMe === "everyone" ? [] : [where("gender", "==", user.showMe === "men" ? "male" : "female")]),
+        ...(gender === "everyone" ? [] : [where("gender", "==", gender === "men" ? "male" : "female")]),
         limit(50)
     ]
 
-    if (user.location) {
-        queries.push(where("location", "==", user.location));
+    if (location) {
+        queries.push(where("location", "==", location));
     }
 
     if (ageRange && ageRange.length === 2 && !isNaN(ageRange[0]) && !isNaN(ageRange[1])) {

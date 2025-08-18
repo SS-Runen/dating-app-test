@@ -4,6 +4,7 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, GoogleAuthProvider, 
 const firebaseConfig = JSON.parse(process.env.NEXT_PUBLIC_FIREBASE_CONFIG || "{}");
 
 export function getFirebaseApp() {
+  console.log("getFirebaseApp\nFIREBASE CONFIG (client):", process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
   // Initialize Firebase
   let app;
   if (!getApps().length) {
@@ -17,12 +18,14 @@ export function getFirebaseApp() {
 }
 
 function getFirebaseAuth(app: any) {
+  console.log("getFirebaseAuth\nFIREBASE CONFIG (client):", process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
   const auth = getAuth(app);
   console.log("Firebase auth initialized", auth);
   return auth;
 }
 
 export async function signInWithMobileNumber(phoneNumber: string) {
+  console.log("signInWithMobileNumber\nFIREBASE CONFIG (client):", process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
   try {
     const app = getFirebaseApp();
     const auth = getFirebaseAuth(app);
@@ -42,6 +45,7 @@ export async function signInWithMobileNumber(phoneNumber: string) {
 }
 
 export async function signInWithGoogle() {
+  console.log("signInWithGoogle\nFIREBASE CONFIG (client):", process.env.NEXT_PUBLIC_FIREBASE_CONFIG);
   try {
     const app = getFirebaseApp();
     const auth = getFirebaseAuth(app);

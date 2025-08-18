@@ -13,6 +13,12 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(false);
     const { user: authUser } = useAppContext();
     const [isFetchingMore, setIsFetchingMore] = useState(false);
+    const [filters, setFilters] = useState({
+        gender: "everyone",
+        location: "",
+        ageRange: [18, 100],
+    });
+    const [showFilters, setShowFilters] = useState(false);
     const handlePagination = () => {
         if (currentIndex <= users.length - 1) {
             setCurrentIndex(currentIndex + 1);
@@ -76,10 +82,7 @@ export default function Dashboard() {
         if (isFetchingMore || !authUser) return;
         setIsFetchingMore(true);
         try {
-            let url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}`;
-            if (authUser.ageRange) {
-                url += `&ageRange=${authUser.ageRange}`;
-            }
+            let url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}&gender=${filters.gender}&location=${filters.location}&ageRange=${filters.ageRange}`;
             const response = await fetch(url);
             const usersData = await response.json();
             setUsers(prevUsers => [...prevUsers, ...usersData.users]);
@@ -94,23 +97,26 @@ export default function Dashboard() {
     }
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            if (!authUser) return;
-            setLoading(true);
-            let url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}`;
-            if (authUser.ageRange) {
-                url += `&ageRange=${authUser.ageRange}`;
-            }
-            const response = await fetch(url);
-            const usersData = await response.json();
-            setUsers(usersData.users);
-            if (usersData.lastVisible) {
-                setLastVisibleId(usersData.lastVisible);
-            }
-            setLoading(false);
-        }
         fetchUsers();
     }, [authUser]);
+
+    const fetchUsers = async (reset = false) => {
+        if (!authUser) return;
+        setLoading(true);
+        if (reset) {
+            setUsers([]);
+            setCurrentIndex(0);
+            setLastVisibleId("");
+        }
+        let url = `/api/find-users?userId=${authUser.id}&lastVisibleId=${lastVisibleId}&gender=${filters.gender}&location=${filters.location}&ageRange=${filters.ageRange}`;
+        const response = await fetch(url);
+        const usersData = await response.json();
+        setUsers(usersData.users);
+        if (usersData.lastVisible) {
+            setLastVisibleId(usersData.lastVisible);
+        }
+        setLoading(false);
+    }
     
     return (
         <>
@@ -118,6 +124,48 @@ export default function Dashboard() {
         <div className="main-container">
             <Navbar />
              <h1>Explore</h1>
+             <button className="btn btn-primary" onClick={() => setShowFilters(!showFilters)} style={{ marginBottom: "20px" }}>
+                <i className="la la-filter"></i> Filters
+             </button>
+                {showFilters && (
+                    <div className="filter-container">
+                        <div className="form-group">
+                            <label>Show me</label>
+                            <select className="form-control" value={filters.gender} onChange={(e) => setFilters({ ...filters, gender: e.target.value })}>
+                                <option value="everyone">Everyone</option>
+                                <option value="men">Men</option>
+                                <option value="women">Women</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Location</label>
+                            <select className="form-control" value={filters.location} onChange={(e) => setFilters({ ...filters, location: e.target.value })}>
+                                <option value="">Any</option>
+                                <option value="london">London</option>
+                                <option value="manchester">Manchester</option>
+                                <option value="birmingham">Birmingham</option>
+                                <option value="leeds">Leeds</option>
+                                <option value="glasgow">Glasgow</option>
+                                <option value="edinburgh">Edinburgh</option>
+                                <option value="cardiff">Cardiff</option>
+                                <option value="belfast">Belfast</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Age range</label>
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                <span>{filters.ageRange[0]}</span>
+                                <input type="range" className="form-control" min="18" max="100" value={filters.ageRange[0]} onChange={(e) => setFilters({ ...filters, ageRange: [parseInt(e.target.value), filters.ageRange[1]] })} />
+                                <input type="range" className="form-control" min="18" max="100" value={filters.ageRange[1]} onChange={(e) => setFilters({ ...filters, ageRange: [filters.ageRange[0], parseInt(e.target.value)] })} />
+                                <span>{filters.ageRange[1]}</span>
+                            </div>
+                        </div>
+                        <button className="btn btn-primary" onClick={() => {
+                            setShowFilters(false);
+                            fetchUsers(true);
+                        }}>Apply</button>
+                    </div>
+                )}
             <div className="explore-container" {...handlers}>
                 {loading ? <div className="explore-item">
                     <div className="gradient-loading" style={{
