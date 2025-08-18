@@ -97,3 +97,34 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Architectural Changes
+
+### `chats` Collection Schema
+
+For the `chats` collection, it is highly recommended to implement the `messages` field as a **sub-collection** rather than an array of objects within the chat document.
+
+**Reasoning:**
+
+Storing messages in a top-level array is a Firestore anti-pattern. As a conversation grows, the chat document will grow in size indefinitely. This leads to several problems:
+- **Document Size Limits:** Firestore documents have a 1 MiB size limit. A long chat history could easily exceed this limit, causing the application to fail.
+- **Performance:** Loading a chat would require loading the entire array of messages, which can be very slow and costly for long conversations.
+- **Querying:** It is difficult to paginate or query messages efficiently when they are stored in a large array.
+
+**Recommended Structure:**
+
+```
+chats/{chatId}/messages/{messageId}
+```
+
+- **`chats` (collection)**
+    - **`{chatId}` (document)**
+        - `id` (string)
+        - `updatedAt` (timestamp)
+        - `memberIds` (array of strings)
+        - **`messages` (sub-collection)**
+            - **`{messageId}` (document)**
+                - `createdAt` (timestamp)
+                - `senderId` (string)
+                - `text` (string)
+```

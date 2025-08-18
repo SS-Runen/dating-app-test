@@ -1,7 +1,8 @@
 import admin from "firebase-admin";
 import { getFirebaseApp } from "../../../lib/firebase/client";
-import { doc, getFirestore, setDoc, serverTimestamp, Timestamp, getDoc } from "firebase/firestore";
+import { doc, getFirestore, setDoc, Timestamp, getDoc } from "firebase/firestore";
 import { Readable } from "stream";
+import { User, userConverter } from "../../../lib/models/user";
 
 
 export async function POST(req: Request) {
@@ -29,35 +30,32 @@ export async function POST(req: Request) {
         // Check if user already exists
         const firebaseApp = getFirebaseApp();
         const db = getFirestore(firebaseApp);
-        const existingUserRef = doc(db, "users", firebaseUser.uid);
+        const existingUserRef = doc(db, "users", firebaseUser.uid).withConverter(userConverter);
         const userDoc = await getDoc(existingUserRef);
         if (userDoc.exists()) {
             return Response.json({ message: "User already exists" }, { status: 400 });
         }
 
         // Save the user to firestore database
-        const user = {
+        const userObject = new User({
             id: firebaseUser.uid,
-            name,
-            aboutMe,
-            gender,
-            showMe,
+            name: name as string,
+            aboutMe: aboutMe as string,
+            gender: gender as string,
+            showMe: showMe as string,
             birthdate: Timestamp.fromDate(new Date(birthdate)),
             profilePicture: "",
-            email: firebaseUser.email ? firebaseUser.email : null,
-            phoneNumber: firebaseUser.phoneNumber ? firebaseUser.phoneNumber : null,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        }
+            phoneNumber: firebaseUser.phoneNumber || null,
+        });
 
         const profilePictureUrl = await uploadImage(profilePicture);
         if (profilePictureUrl) {
-            user.profilePicture = profilePictureUrl as string;
+            userObject.profilePicture = profilePictureUrl as string;
         }
 
-        const userRef = doc(db, "users", firebaseUser.uid);
-        await setDoc(userRef, user);
-        return Response.json({ message: "User registered successfully", user });
+        const userRef = doc(db, "users", firebaseUser.uid).withConverter(userConverter);
+        await setDoc(userRef, userObject);
+        return Response.json({ message: "User registered successfully", user: userObject });
     } catch (error) {
         console.error(error);
         return Response.json({ message: "Failed to register user" }, { status: 500 });
