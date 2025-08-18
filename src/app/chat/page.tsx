@@ -1,22 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AuthGuard from "../../lib/components/AuthGuard";
 import { useAppContext } from "@/lib/context/useAppContext";
-import { arrayUnion, collection, doc, documentId, getDocs, getFirestore, onSnapshot, query, addDoc, Timestamp, updateDoc, where, getDoc } from "firebase/firestore";
-import { getFirebaseApp } from "../../lib/firebase/client";
-import { guid } from "../../lib/utils/utils";
 import { useSearchParams } from "next/navigation";
 import Swal from "sweetalert2";
+import { IChat, IMessage } from "@/lib/models/chat";
+import { onSnapshot, query, collection, getFirestore, orderBy } from "firebase/firestore";
+import { getFirebaseApp } from "@/lib/firebase/client";
 
-export interface UserChat {
-    id: string;
-    memberIds: string[];
-    members: Record<string, any>;
-    messages: any[];
-    updatedAt: any;
-}
-
+// Keep the useWindowSize hook as is
 function useWindowSize() {
     const [windowSize, setWindowSize] = useState<any>({});
   
@@ -39,136 +32,110 @@ function useWindowSize() {
   
       window.addEventListener('resize', handleResize);
   
-      // Clean up the event listener when the component unmounts
       return () => {
         window.removeEventListener('resize', handleResize);
       };
-    }, []); // Empty dependency array ensures the effect runs only once on mount
+    }, []);
   
     return windowSize;
   }
   
-
 export default function Chat() {
     const searchParams = useSearchParams();
     const chatUserId = searchParams.get("chatUserId");
-    const [chats, setChats] = useState<UserChat[]>([]);
-    const [selectedChatId, setSelectedChatId] = useState<string>("");
-    const {user: authUser} = useAppContext();
+    const [chats, setChats] = useState<IChat[]>([]);
+    const [selectedChat, setSelectedChat] = useState<IChat | null>(null);
+    const { user: authUser } = useAppContext();
 
+    // Effect to find or create a chat when chatUserId is present
     useEffect(() => {
-        const createNewChat = async () => {
+        const findOrCreateChat = async () => {
             if (!chatUserId || !authUser) return;
-           try {
-            const firebaseApp = getFirebaseApp();
-            const db = getFirestore(firebaseApp);
-            // Check if chat already exists
-            const memberIds = [authUser.id, chatUserId].sort();
             Swal.showLoading();
-            const filter = query(collection(db, "chats"), where("memberIds", "==", memberIds));
-            const chatDocs = await getDocs(filter);
-            if (chatDocs.docs.length > 0) {
-                console.log("Chat already exists");
-                // Chat already exists
-                setSelectedChatId(chatDocs.docs[0].id);
-                Swal.close();
-            } else {
-                console.log("Chat does not exist");
-                const userRef = doc(db, "users", chatUserId);
-                const userDoc = await getDoc(userRef);
-                if (!userDoc.exists()) {
-                    throw new Error("User does not exist");
-                }
-                const chatUserData = userDoc.data();
-                console.log(chatUserData);
-                // Create new chat
-                const chat = await addDoc(collection(db, "chats"), {
-                    members: {
-                        [authUser.id]: {
-                            name: authUser.name,
-                            profilePicture: authUser.profilePicture,
-                        },
-                        [chatUserId]: {
-                            name: chatUserData.name,
-                            profilePicture: chatUserData.profilePicture,
-                        },
-                    },
-                    memberIds: memberIds,
-                    messages: [],
-                    updatedAt: Timestamp.now(),
+            try {
+                const response = await fetch('/api/create-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ authUserId: authUser.id, chatUserId }),
                 });
-                setSelectedChatId(chat.id);
+
+                if (!response.ok) {
+                    throw new Error('Failed to create or find chat');
+                }
+
+                const { chat } = await response.json();
+                setSelectedChat(chat);
+            } catch (error) {
+                console.error(error);
+                Swal.fire({
+                    title: "Error",
+                    text: "Failed to create chat",
+                    icon: "error",
+                });
+            } finally {
                 Swal.close();
             }
-           } catch (error) {
-            console.log(error);
-            Swal.fire({
-                title: "Error",
-                text: "Failed to create chat",
-                icon: "error",
-            });
-           }
-        }
-        createNewChat();
+        };
+        findOrCreateChat();
     }, [chatUserId, authUser]);
 
+    // Effect to fetch all of the user's chats
     useEffect(() => {
         const fetchChats = async () => {
             if (!authUser) return;
-            const firebaseApp = getFirebaseApp();
-            const db = getFirestore(firebaseApp);
-            // Subscribe to chats collection
-            const filter = query(collection(db, "chats"), where(`members.${authUser.id}`, "!=", null));
-            const unsubscribe = onSnapshot(filter, (snapshot) => {
-                const chats = snapshot.docs.map((doc) => {
-                    return {
-                        ...doc.data(),
-                        id: doc.id,
-                    }
-                });
-                const sortedChats = chats.sort((a: any, b: any) => b.updatedAt.seconds - a.updatedAt.seconds);
-                setChats(sortedChats as UserChat[]);
-            });
-            return () => unsubscribe();
-        }
+            try {
+                const response = await fetch(`/api/get-chats?userId=${authUser.id}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch chats');
+                }
+                const { chats } = await response.json();
+                const sortedChats = chats.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+                setChats(sortedChats);
+            } catch (error) {
+                console.error("Failed to fetch chats:", error);
+            }
+        };
         fetchChats();
+
+        // Optional: Add a realtime listener for chat list updates if needed
+        // This is more complex and may not be required for MVP.
+        // For now, we rely on the initial fetch. The list will update on page refresh.
+
     }, [authUser]);
 
-    const handleSelectChat = (chat: any) => {
-        setSelectedChatId(chat.id);
+    const handleSelectChat = (chat: IChat) => {
+        setSelectedChat(chat);
     }
 
     const handleBack = () => {
-        setSelectedChatId("");
+        setSelectedChat(null);
     }
 
     return (
         <>
-        <AuthGuard/>
+            <AuthGuard />
             <div className="chat-container">
-                <ChatSidebar chats={chats} authUser={authUser} handleSelectChat={handleSelectChat} selectedChatId={selectedChatId} />
-                <ChatWindow selectedChatId={selectedChatId} authUser={authUser} handleBack={handleBack} />
+                <ChatSidebar chats={chats} authUser={authUser} handleSelectChat={handleSelectChat} selectedChat={selectedChat} />
+                <ChatWindow selectedChat={selectedChat} authUser={authUser} handleBack={handleBack} />
             </div>
         </>
     )
 }
 
-function ChatSidebar({chats, authUser, handleSelectChat, selectedChatId}: {chats: UserChat[], authUser: any, handleSelectChat: (chat: UserChat) => void, selectedChatId: string}) {
+function ChatSidebar({ chats, authUser, handleSelectChat, selectedChat }: { chats: IChat[], authUser: any, handleSelectChat: (chat: IChat) => void, selectedChat: IChat | null }) {
     const { width } = useWindowSize();
     return (
-        <div className={`chat-sidebar ${selectedChatId && width < 768 ? "hidden" : ""}`}>
+        <div className={`chat-sidebar ${selectedChat && width < 768 ? "hidden" : ""}`}>
             <div className="chat-sidebar-header">
-                <i className="la la-arrow-left" onClick={() => {
-                    window.location.href = "/matches";
-                }} style={{cursor: "pointer"}}></i>
+                <i className="la la-arrow-left" onClick={() => window.location.href = "/matches"} style={{ cursor: "pointer" }}></i>
                 <h3>Chats</h3>
             </div>
             {chats.length > 0 ? (
-            <div className="chat-sidebar-body">
-                {chats.map((chat, index) => (
-                    <ChatSidebarItem key={index} chat={chat} authUser={authUser} handleSelectChat={handleSelectChat} />
-                ))}
-            </div>
+                <div className="chat-sidebar-body">
+                    {chats.map((chat) => (
+                        <ChatSidebarItem key={chat.id} chat={chat} authUser={authUser} handleSelectChat={handleSelectChat} />
+                    ))}
+                </div>
             ) : (
                 <div className="chat-sidebar-body" style={{ margin: "0 auto", textAlign: "center", padding: "20px" }}>
                     <h3>No chats found</h3>
@@ -179,9 +146,7 @@ function ChatSidebar({chats, authUser, handleSelectChat, selectedChatId}: {chats
     )
 }
 
-
-
-function ChatSidebarItem({chat, authUser, handleSelectChat}: {chat: UserChat, authUser: any, handleSelectChat: (chat: UserChat) => void}) {
+function ChatSidebarItem({ chat, authUser, handleSelectChat }: { chat: IChat, authUser: any, handleSelectChat: (chat: IChat) => void }) {
     const [chatUser, setChatUser] = useState<any>(null);
 
     useEffect(() => {
@@ -190,100 +155,120 @@ function ChatSidebarItem({chat, authUser, handleSelectChat}: {chat: UserChat, au
             setChatUser(chat.members[chatUserId]);
         }
     }, [chat, authUser?.id]);
+    
+    // The last message is now directly available on the chat object
+    const lastMessage = chat.lastMessage;
 
     return (
         <div className="chat-sidebar-item" key={chat.id} onClick={() => handleSelectChat(chat)}>
-        <div className="chat-sidebar-item-avatar">
-            <img src={chatUser?.profilePicture || null} alt={chatUser?.name || ""} />
+            <div className="chat-sidebar-item-avatar">
+                <img src={chatUser?.profilePicture || null} alt={chatUser?.name || ""} />
+            </div>
+            <div className="chat-sidebar-item-info">
+                <span>{chatUser?.name || ""}</span>
+                <span>{lastMessage?.text || "No messages yet"}</span>
+                <span>{lastMessage?.createdAt ? new Date(lastMessage.createdAt as any).toLocaleString() : ""}</span>
+            </div>
         </div>
-        <div className="chat-sidebar-item-info">
-            <span>{chatUser?.name || ""}</span>
-            <span>{chat.messages[chat.messages.length - 1]?.text || ""}</span>
-            <span>{chat.messages[chat.messages.length - 1]?.createdAt?.seconds ? new Date(chat.messages[chat.messages.length - 1].createdAt.seconds * 1000).toLocaleString() : ""}</span>
-        </div>
-    </div>
     )
 }
 
-function ChatWindow({selectedChatId, authUser, handleBack}: {selectedChatId: string, authUser: any, handleBack: () => void}) {
+function ChatWindow({ selectedChat, authUser, handleBack }: { selectedChat: IChat | null, authUser: any, handleBack: () => void }) {
     const [chatUser, setChatUser] = useState<any>(null);
-    const [selectedChat, setSelectedChat] = useState<any>(null);
+    const [messages, setMessages] = useState<IMessage[]>([]);
     const [message, setMessage] = useState<string>("");
-    const {width} = useWindowSize();
+    const { width } = useWindowSize();
+    const messagesEndRef = useRef<null | HTMLDivElement>(null);
+
+    // Effect to get the other user's data from the selected chat
+    useEffect(() => {
+        if (!selectedChat || !authUser) return;
+        const chatUserId = Object.keys(selectedChat.members).find((key: any) => key !== authUser.id);
+        if (chatUserId) {
+            setChatUser(selectedChat.members[chatUserId]);
+        }
+    }, [selectedChat, authUser]);
+
+    // Effect for real-time message updates
+    useEffect(() => {
+        if (!selectedChat) return;
+        
+        const firebaseApp = getFirebaseApp();
+        const db = getFirestore(firebaseApp);
+        const messagesRef = collection(db, "chats", selectedChat.id, "messages");
+        const q = query(messagesRef, orderBy("createdAt", "asc"));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const newMessages: IMessage[] = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            } as IMessage));
+            setMessages(newMessages);
+        });
+
+        return () => unsubscribe();
+    }, [selectedChat]);
+
+    // Effect to scroll to the bottom of the messages
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
     const handleSendMessage = async () => {
-        if (!message || message.trim() === "" || !selectedChatId) return;
-        console.log("send message", message);
+        if (!message.trim() || !selectedChat) return;
 
         try {
-            const firebaseApp = getFirebaseApp();
-            const db = getFirestore(firebaseApp);
-            await updateDoc(doc(db, "chats", selectedChatId), {
-                messages: arrayUnion({
-                    id: guid(),
-                    text: message,
+            await fetch('/api/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    chatId: selectedChat.id,
                     senderId: authUser.id,
-                    createdAt: Timestamp.now(),
+                    text: message,
                 }),
             });
+            setMessage("");
         } catch (error) {
-            console.log(error);
+            console.error("Failed to send message:", error);
+            Swal.fire("Error", "Failed to send message", "error");
         }
-        setMessage("");
+    };
+
+    if (!selectedChat) {
+        return (
+            <div className="chat-window-unselected">
+                <h3>Select a chat to start messaging</h3>
+            </div>
+        )
     }
-
-    useEffect(() => {
-        const fetchChat = async () => {
-            if (!selectedChatId) return;
-            const firebaseApp = getFirebaseApp();
-            const db = getFirestore(firebaseApp);
-            // Subscribe to chats collection
-            const filter = query(collection(db, "chats"), where(documentId(), "==", selectedChatId));
-            const unsubscribe = onSnapshot(filter, (snapshot) => {
-                if (snapshot.docs.length > 0) {
-                    const chat = snapshot.docs[0].data();
-                    const chatUserId = Object.keys(chat.members).find((key: any) => key === authUser.id);
-                    if (chatUserId) {
-                        setChatUser(chat.members[chatUserId]);
-                    }
-                    setSelectedChat(chat);
-                }
-            });
-            return () => unsubscribe();
-        }
-
-        fetchChat();
-    }, [selectedChatId, authUser?.id]);
 
     return (
         <div className="chat-window">
-        {selectedChat && (
             <div className="chat-window-container">
-            <div className="chat-window-header">
-                {/* Img */}
-                {width < 768 && <i className="la la-arrow-left" onClick={handleBack} style={{cursor: "pointer"}}></i>}
-                <img src={chatUser?.profilePicture} alt={chatUser?.name} />
-                <h3 style={{ color: "#fff" }}>{chatUser?.name}</h3>
-            </div>
-            <div className="chat-window-messages">
-                {selectedChat.messages.map((message: any, index: number) => (
-                    message.text && (<div className={`chat-window-message ${message.senderId === authUser.id ? "right" : ""}`} key={index}>
-                        <div className="chat-window-message-avatar">
-                            <img src={selectedChat.members?.[message.senderId]?.profilePicture} alt={selectedChat.members?.[message.senderId]?.name} />
+                <div className="chat-window-header">
+                    {width < 768 && <i className="la la-arrow-left" onClick={handleBack} style={{ cursor: "pointer" }}></i>}
+                    <img src={chatUser?.profilePicture} alt={chatUser?.name} />
+                    <h3 style={{ color: "#fff" }}>{chatUser?.name}</h3>
+                </div>
+                <div className="chat-window-messages">
+                    {messages.map((msg) => (
+                        <div className={`chat-window-message ${msg.senderId === authUser.id ? "right" : ""}`} key={msg.id}>
+                             <div className="chat-window-message-avatar">
+                                <img src={selectedChat.members?.[msg.senderId]?.profilePicture} alt={selectedChat.members?.[msg.senderId]?.name} />
+                            </div>
+                            <div className="chat-window-message-content">
+                                <span>{msg.text}</span>
+                                <span>{msg.createdAt ? new Date(msg.createdAt as any).toLocaleString() : ""}</span>
+                            </div>
                         </div>
-                        <div className="chat-window-message-content">
-                            <span>{message.text}</span>
-                            <span>{message.createdAt?.seconds ? new Date(message.createdAt.seconds * 1000).toLocaleString() : ""}</span>
-                        </div>
-                    </div>)
-                ))}
+                    ))}
+                    <div ref={messagesEndRef} />
+                </div>
+                <div className="chat-window-input">
+                    <input id="message-input" type="text" className="form-control" placeholder="Type your message here..." value={message} onChange={(e) => setMessage(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} />
+                    <button className="btn btn-primary" style={{ margin: 0 }} onClick={handleSendMessage}>Send</button>
+                </div>
             </div>
-            <div className="chat-window-input">
-                <input id="message-input" type="text" className="form-control" placeholder="Type your message here..." value={message} onChange={(e) => setMessage(e.target.value)} />
-                <button className="btn btn-primary" style={{ margin: 0 }} onClick={handleSendMessage}>Send</button>
-            </div>
-            </div>
-        )}
-    </div>
+        </div>
     )
 }
