@@ -21,6 +21,7 @@ export default function CreateAccount(props: any) {
     const [loading, setLoading] = useState(false);
     const [gender, setGender] = useState("male");
     const [showMe, setShowMe] = useState("everyone");
+    const [location, setLocation] = useState("");
 
     useEffect(() => {
         return () => {
@@ -178,8 +179,30 @@ export default function CreateAccount(props: any) {
                                 <label htmlFor="about-me">About me</label>
                                 <textarea className="form-control" id="about-me" placeholder="About me" value={aboutMe} onChange={(e) => setAboutMe(e.target.value)} />
                             </div>
+                            <div className="form-group">
+                                <label htmlFor="location">Location</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    id="location"
+                                    placeholder="Enter your city or area"
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
+                                    list="location-suggestions"
+                                />
+                                <datalist id="location-suggestions">
+                                    <option value="London" />
+                                    <option value="Manchester" />
+                                    <option value="Birmingham" />
+                                    <option value="Leeds" />
+                                    <option value="Glasgow" />
+                                    <option value="Edinburgh" />
+                                    <option value="Cardiff" />
+                                    <option value="Belfast" />
+                                </datalist>
+                            </div>
                             <button 
-                            disabled={!name || !gender || !showMe || !birthdate || !aboutMe || !profilePicture || loading}
+                            disabled={!name || !gender || !showMe || !birthdate || !aboutMe || !profilePicture || !location || loading}
                             className="btn btn-primary" 
                             type="button" 
                             style={{ width: "100%"}} 
@@ -190,6 +213,7 @@ export default function CreateAccount(props: any) {
                                 formData.append("aboutMe", aboutMe);
                                 formData.append("birthdate", birthdate);
                                 formData.append("showMe", showMe);
+                                formData.append("location", location);
                                 if (profilePicture) {
                                     const blob = new Blob([profilePicture], { type: profilePicture.type });
                                     formData.append("profilePicture", blob, profilePicture.name);

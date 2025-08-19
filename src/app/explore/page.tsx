@@ -139,17 +139,24 @@ export default function Dashboard() {
                         </div>
                         <div className="form-group">
                             <label>Location</label>
-                            <select className="form-control" value={filters.location} onChange={(e) => setFilters({ ...filters, location: e.target.value })}>
-                                <option value="">Any</option>
-                                <option value="london">London</option>
-                                <option value="manchester">Manchester</option>
-                                <option value="birmingham">Birmingham</option>
-                                <option value="leeds">Leeds</option>
-                                <option value="glasgow">Glasgow</option>
-                                <option value="edinburgh">Edinburgh</option>
-                                <option value="cardiff">Cardiff</option>
-                                <option value="belfast">Belfast</option>
-                            </select>
+                            <input
+                                type="text"
+                                className="form-control"
+                                value={filters.location}
+                                onChange={(e) => setFilters({ ...filters, location: e.target.value })}
+                                list="location-suggestions"
+                                placeholder="Type or select a location"
+                            />
+                            <datalist id="location-suggestions">
+                                <option value="London" />
+                                <option value="Manchester" />
+                                <option value="Birmingham" />
+                                <option value="Leeds" />
+                                <option value="Glasgow" />
+                                <option value="Edinburgh" />
+                                <option value="Cardiff" />
+                                <option value="Belfast" />
+                            </datalist>
                         </div>
                         <div className="form-group">
                             <label>Age range</label>

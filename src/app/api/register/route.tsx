@@ -3,6 +3,7 @@ import { getFirebaseApp } from "../../../lib/firebase/client";
 import { doc, getFirestore, setDoc, Timestamp, getDoc } from "firebase/firestore";
 import { Readable } from "stream";
 import { User, userConverter } from "../../../lib/models/user";
+import { tokenizeLocation } from "../../../lib/utils/utils";
 
 
 export async function POST(req: Request) {
@@ -14,6 +15,7 @@ export async function POST(req: Request) {
     const uid = formData.get("uid");
     const gender = formData.get("gender");
     const showMe = formData.get("showMe");
+    const location = formData.get("location") as string;
     try {
         if (admin.apps.length === 0) {
             const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -46,7 +48,8 @@ export async function POST(req: Request) {
             birthdate: Timestamp.fromDate(new Date(birthdate)),
             profilePicture: "",
             phoneNumber: firebaseUser.phoneNumber || null,
-            location: null,
+            location: location || null,
+            locationTokens: tokenizeLocation(location),
             ageRange: null,
         });
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getFirebaseApp } from "../../../lib/firebase/client";
 import { doc, getFirestore, serverTimestamp, updateDoc, Timestamp } from "firebase/firestore";
 import { Readable } from "stream";
+import { tokenizeLocation } from "../../../lib/utils/utils";
 
 export async function POST(req: NextRequest) {
     const formData = await req.formData();
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
     const birthdate = formData.get("birthdate") as string;
     const userId = formData.get("userId");
     const gender = formData.get("gender");
-    const location = formData.get("location");
+    const location = formData.get("location") as string;
 
     if (!userId) {
         return NextResponse.json({ error: "User ID is required" }, { status: 400 });
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
           updatedAt: serverTimestamp(),
           gender,
           location,
+          locationTokens: tokenizeLocation(location),
         };
         let profilePictureUrl = null;
         if (profilePicture && profilePicture?.size > 0) {

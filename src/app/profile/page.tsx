@@ -195,17 +195,28 @@ export default function Profile() {
                     <option value="female">Female</option>
                 </select>) : (<p style={{ textTransform: "capitalize" }}>{user.gender}</p>)}
                 <h6>Location</h6>
-                {isEditing ? (<select className="form-control" style={{ maxWidth: "200px" }} value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })}>
-                    <option value="">Select Location</option>
-                    <option value="london">London</option>
-                    <option value="manchester">Manchester</option>
-                    <option value="birmingham">Birmingham</option>
-                    <option value="leeds">Leeds</option>
-                    <option value="glasgow">Glasgow</option>
-                    <option value="edinburgh">Edinburgh</option>
-                    <option value="cardiff">Cardiff</option>
-                    <option value="belfast">Belfast</option>
-                </select>) : (<p style={{ textTransform: "capitalize" }}>{user.location}</p>)}
+                {isEditing ? (
+                    <input
+                        type="text"
+                        className="form-control"
+                        style={{ maxWidth: "200px" }}
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                        list="location-suggestions"
+                    />
+                ) : (
+                    <p style={{ textTransform: "capitalize" }}>{user.location}</p>
+                )}
+                <datalist id="location-suggestions">
+                    <option value="London" />
+                    <option value="Manchester" />
+                    <option value="Birmingham" />
+                    <option value="Leeds" />
+                    <option value="Glasgow" />
+                    <option value="Edinburgh" />
+                    <option value="Cardiff" />
+                    <option value="Belfast" />
+                </datalist>
             </div>
             </div>
         )}
@@ -274,17 +285,24 @@ function ProfileSettings({user, setShowSettings}: {user: any, setShowSettings: (
                 </div>
                 <div className="settings-group">
                     <h6>Location</h6>
-                    <select className="form-control" style={{ maxWidth: "200px" }} value={location} onChange={(e) => setLocation(e.target.value)}>
-                        <option value="">Select Location</option>
-                        <option value="london">London</option>
-                        <option value="manchester">Manchester</option>
-                        <option value="birmingham">Birmingham</option>
-                        <option value="leeds">Leeds</option>
-                        <option value="glasgow">Glasgow</option>
-                        <option value="edinburgh">Edinburgh</option>
-                        <option value="cardiff">Cardiff</option>
-                        <option value="belfast">Belfast</option>
-                    </select>
+                    <input
+                        type="text"
+                        className="form-control"
+                        style={{ maxWidth: "200px" }}
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        list="location-suggestions"
+                    />
+                    <datalist id="location-suggestions">
+                        <option value="London" />
+                        <option value="Manchester" />
+                        <option value="Birmingham" />
+                        <option value="Leeds" />
+                        <option value="Glasgow" />
+                        <option value="Edinburgh" />
+                        <option value="Cardiff" />
+                        <option value="Belfast" />
+                    </datalist>
                 </div>
                 {/* TODO: Add age range */}
                 <div className="settings-group">

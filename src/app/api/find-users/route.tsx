@@ -1,5 +1,6 @@
 import { getFirestore, collection, query, where, getDocs, limit, documentId, startAfter, QueryConstraint, doc, getDoc} from "firebase/firestore";
 import { getFirebaseApp } from "../../../lib/firebase/client";
+import { tokenizeLocation } from "../../../lib/utils/utils";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -41,7 +42,10 @@ export async function GET(req: Request) {
     ]
 
     if (location) {
-        queries.push(where("location", "==", location));
+        const tokens = tokenizeLocation(location);
+        if (tokens.length > 0) {
+            queries.push(where("locationTokens", "array-contains", tokens[0]));
+        }
     }
 
     if (ageRange && ageRange.length === 2 && !isNaN(ageRange[0]) && !isNaN(ageRange[1])) {

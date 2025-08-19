@@ -10,6 +10,7 @@ export interface IUser {
     profilePicture: string;
     phoneNumber: string | null;
     location: string | null;
+    locationTokens: string[]; // Added for efficient location filtering
     ageRange: number[] | null;
     createdAt: FieldValue;
     updatedAt: FieldValue;
@@ -25,6 +26,7 @@ export class User implements IUser {
     profilePicture: string;
     phoneNumber: string | null;
     location: string | null;
+    locationTokens: string[]; // Added for efficient location filtering
     ageRange: number[] | null;
     createdAt: FieldValue;
     updatedAt: FieldValue;
@@ -39,6 +41,7 @@ export class User implements IUser {
         this.profilePicture = data.profilePicture || "";
         this.phoneNumber = data.phoneNumber;
         this.location = data.location || null;
+        this.locationTokens = data.locationTokens || [];
         this.ageRange = data.ageRange || null;
         this.createdAt = data.createdAt || serverTimestamp();
         this.updatedAt = data.updatedAt || serverTimestamp();
@@ -55,6 +58,7 @@ export class User implements IUser {
             profilePicture: this.profilePicture,
             phoneNumber: this.phoneNumber,
             location: this.location,
+            locationTokens: this.locationTokens,
             ageRange: this.ageRange,
             createdAt: this.createdAt,
             updatedAt: this.updatedAt,
@@ -81,6 +85,7 @@ export const userConverter: FirestoreDataConverter<User> = {
             profilePicture: data.profilePicture,
             phoneNumber: data.phoneNumber,
             location: data.location,
+            locationTokens: data.locationTokens,
             ageRange: data.ageRange,
             createdAt: data.createdAt,
             updatedAt: data.updatedAt,
